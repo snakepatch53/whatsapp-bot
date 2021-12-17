@@ -5,6 +5,7 @@ const TEMPORAL_CACHE = {};
 
 const navigate = {
     Mensaje_masivo: {
+
         
     },
     Opciones: {
