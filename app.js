@@ -1,10 +1,8 @@
-const smartolt = require('./smartolt.js');
-const whatsapp_action = require('./whatsapp-action.js');
-const router = require('./router.js');
 const Client = require('whatsapp-web.js').Client;
 const qrcode = require('qrcode-terminal');
+const fs = require('fs');
 
-var fs = require('fs');
+const DriveEntries = require('./drive-entries.js');
 let mensaje_tmp = '';
 
 // Path where the session data will be stored
@@ -32,78 +30,11 @@ client.on('authenticated', (session) => {
 
 // Generar codigo QR
 client.on('qr', (qr) => qrcode.generate(qr, 'small'));
-
 // Mensaje de bienvenida
-client.on('ready', () => {
-    client.on('message', (message) => {
-        const { from, to, body } = message;
-
-        if (body.toLocaleLowerCase() == "/help") {
-            let str = router.print(body);
-            client.sendMessage(from, str);
-        } else {
-            router.match(message, client);
-        }
-
-        // switch (body.toLocaleLowerCase()) {
-        //     case 'opciones':
-        //         client.sendMessage(from, `
-        //             opcion1. Mensaje masivo.
-        //             opcion2. Lista de clientes.
-        //             opcion3. Lista de clientes en Warnning.
-        //         `);
-        //         break;
-
-        //     case 'opcion1':
-        //         client.sendMessage(from, 'Ingrese el mensaje y luego escriba "opcion1_send"');
-        //         break;
-
-        //     case 'opcion1_send':
-        //         smartolt.get_all_cellphone_numbers(numbers => {
-        //             numbers.forEach(number => {
-        //                 try {
-        //                     client.sendMessage(number + '@c.us', mensaje_tmp);
-        //                 } catch (error) {}
-        //             });
-        //             client.sendMessage(from, 'mensaje masivo enviado!');
-        //         });
-        //         break;
-
-        //     case 'opcion2':
-        //         smartolt.get_all_onus_details(function (res) {
-        //             let clientes = ``;
-        //             for (let i = 0; i < 10; i++) {
-        //                 let item = res[i];
-        //                 clientes += `${ item.name } = ${ item.signal } = ${ item.signal_1310 }\n`;
-        //             }
-        //             client.sendMessage(from, clientes);
-        //         });
-        //         break;
-
-        //     case 'opcion3':
-        //         smartolt.get_all_onus_details(function (res) {
-        //             let clientes = ``;
-        //             let cont = 0;
-        //             for (let i = 0; i < res.length; i++) {
-        //                 let item = res[i];
-        //                 if (item.signal == "Warning" && cont <= 10) {
-        //                     clientes += `${ item.name } = ${ item.signal } = ${ item.signal_1310 }\n`;
-        //                     cont++;
-        //                 }
-        //             }
-        //             client.sendMessage(from, clientes);
-        //         });
-        //         break;
-
-        //     default:
-        //         mensaje_tmp = body;
-        //         break;
-        // }
-
-        // whatsapp_action.say_hello(client, from);
-
-    });
-    console.log("ready!");
+client.on('ready', async () => {
+    console.log("Ready Whatsapp!");
+    await DriveEntries.loadData();
+    client.on('message', (message) => DriveEntries.drive(message, client));
 });
 
 client.initialize();

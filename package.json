@@ -12,8 +12,8 @@
   "license": "ISC",
   "dependencies": {
     "follow-redirects": "^1.14.6",
+    "playwright": "^1.17.1",
     "qrcode-terminal": "^0.12.0",
-    "request": "^2.88.2",
     "whatsapp-web.js": "^1.15.3"
   },
   "devDependencies": {
