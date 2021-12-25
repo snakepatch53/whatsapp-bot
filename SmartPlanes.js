@@ -6,27 +6,32 @@ const ACCOUNT_USER = "admin";
 const ACCOUNT_PASS = "admin";
 const URL_NAVIGATE = 'http://167.71.189.123/admin/#ajax/usuarios?action=adduser';
 
-const getData = async () => {
+// GENERAL FUNCTIONS
+const getBrowser = async function () {
     const browser = await chromium.launch({
         headless: false,
         args: ['--start-maximized', '--disable-infobars', '--disable-web-security', '--disable-site-isolation-trials'],
         slowMo: 100
     });
     const context = await browser.newContext();
-
     const page = await context.newPage();
-    await page.goto(URL_NAVIGATE);
+    return {
+        browser,
+        context,
+        page
+    };
+}
 
-    //login
+const process_login = async function (page) {
+    await page.goto(URL_NAVIGATE);
     await page.fill('input#login-login', ACCOUNT_USER);
     await page.fill('input#password-login', ACCOUNT_PASS);
     await page.click('button.btn.btn-success.btn-block.btn-lg');
     await page.waitForNavigation();
     await page.goto(URL_NAVIGATE);
+}
 
-    //FORM PAGE1
-
-    // Get "ZONAS"
+const getZones = async function (page) {
     await page.fill("input[name='usuarios[nombre]']", "GET_DATA");
     const zones = await page.evaluate(async () => {
         let data = [];
@@ -49,11 +54,12 @@ const getData = async () => {
         };
         return data;
     });
-    await page.click('button.btn.btn-default.sw-btn-next');
-    await page.click('button.btn.btn-default.sw-btn-next');
-    //FORM PAGE2
-    // GET "PLANES INTERNET"
+    return zones;
+}
 
+const getPlanes = async function (page) {
+    await page.click('button.btn.btn-default.sw-btn-next');
+    await page.click('button.btn.btn-default.sw-btn-next');
     const planes = await page.evaluate(async () => {
         let eventChange = new Event("change");
         let $selectRouter = await document.querySelector("select[name='servicio[nodo]']");
@@ -80,8 +86,10 @@ const getData = async () => {
         };
         return data;
     });
+    return planes;
+}
 
-    // GET "POOLS IPV4"
+const getPools = async function (page) {
     const pools = await page.evaluate(async () => {
         let eventChange = new Event("change");
         let $selectTipoIp = await document.querySelector("select[name='servicio[tipoipv4]']");
@@ -109,6 +117,53 @@ const getData = async () => {
         };
         return data;
     });
+    return pools;
+}
+
+const getIpv4 = async (page) => {
+    const pools = await page.evaluate(async () => {
+        let promise = new Promise((resolve, reject) => {
+            let options = [];
+            const loop = setInterval(async () => {
+                options = await document.querySelectorAll("ul.select2-selection__rendered li");
+                if (options.length > 0) {
+                    options.forEach(option => {
+                        if (option.title.trim() != "") {
+                            clearInterval(loop);
+                            resolve(option.title);
+                        }
+                    });
+                }
+            }, 100);
+        });
+        const res = await promise;
+        console.log(res);
+        return res;
+    });
+    return pools;
+}
+
+
+// EXPORT FUNCTIONS
+const getAllData = async () => {
+    const {
+        browser,
+        context,
+        page
+    } = await getBrowser();
+
+    //login
+    process_login(page);
+
+    // Get "ZONAS"
+    const zones = await getZones(page);
+
+    // GET "PLANES INTERNET"
+    const planes = await getPlanes(page);
+
+    // GET "POOLS IPV4"
+    const pools = await getPools(page);
+
     await browser.close();
     return {
         zones,
@@ -117,11 +172,6 @@ const getData = async () => {
     }
 }
 
-/*
-
-NO TE OLVIDES DE DEVOLVER EL IP Y EL VLAN
-
-*/
 const registerUser = async (user_name, user_zone, plan_internet, pool_ipv4) => {
     const browser = await chromium.launch({
         headless: false,
@@ -155,11 +205,14 @@ const registerUser = async (user_name, user_zone, plan_internet, pool_ipv4) => {
     await page.selectOption("select[name='servicio[idperfil]']", plan_internet);
     await page.selectOption("select[name='servicio[tipoipv4]']", "0");
     await page.selectOption("select[name='servicio[redipv4]']", pool_ipv4);
+    const IPV4 = await getIpv4(page);
+    
     await page.click('button.btn-loader.btn.btn-success.btn-finish');
     await browser.close();
+    return IPV4;
 }
 
 module.exports = {
-    getData,
+    getAllData,
     registerUser
 }

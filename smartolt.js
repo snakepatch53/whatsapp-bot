@@ -8,25 +8,31 @@ const URL_NAVIGATE_SPEED = 'https://moronanet.smartolt.com/speed_profiles';
 const ACCOUNT_USER = "gonzaloproducciones1@hotmail.com";
 const ACCOUNT_PASS = "2fXXBzQ9djJG";
 
-const getData = async () => {
+const getBrowser = async function () {
     const browser = await chromium.launch({
         headless: false,
         args: ['--start-maximized', '--disable-infobars', '--disable-web-security', '--disable-site-isolation-trials'],
         slowMo: 100
     });
     const context = await browser.newContext();
-
     const page = await context.newPage();
-    await page.goto(URL_NAVIGATE);
+    return {
+        browser,
+        context,
+        page
+    };
+}
 
-    //login
+const process_login = async function (page) {
+    await page.goto(URL_NAVIGATE);
     await page.fill("input[name='identity']", ACCOUNT_USER);
     await page.fill("input[id='password']", ACCOUNT_PASS);
     await page.click("input[type='submit']");
-    // await page.waitForNavigation();
-
-    //#region Get ONU's
     await page.goto(URL_NAVIGATE);
+    // await page.waitForNavigation();
+}
+
+const getOnus = async function (page) {
     const onus = await page.evaluate(async () => {
         let data = [];
         let promise = new Promise((resolve, reject) => {
@@ -53,9 +59,10 @@ const getData = async () => {
         });
         return data;
     });
-    //#endregion
+    return onus;
+}
 
-    //#region Get Zones
+const getZones = async function (page) {
     await page.goto(URL_NAVIGATE_ZONES);
     const zones = await page.evaluate(async () => {
         let data = [];
@@ -80,9 +87,10 @@ const getData = async () => {
         });
         return data;
     });
-    //#endregion
+    return zones;
+}
 
-    //#region Get Speed
+const getSpeedProfiles = async function (page) {
     await page.goto(URL_NAVIGATE_SPEED);
     const speed = await page.evaluate(async () => {
         let promise = new Promise((resolve, reject) => {
@@ -131,7 +139,33 @@ const getData = async () => {
             data_upload
         };
     });
-    //#endregion
+    return speed;
+}
+
+
+// EXPORT FUNCTIONS
+const getVlan = function (board, port) {
+    return `1${ board }${ port < 10 ? "0"+port : port }`;
+}
+
+const getAllData = async function () {
+    const {
+        browser,
+        context,
+        page
+    } = await getBrowser();
+
+    //login
+    await process_login(page);
+
+    // get onus
+    const onus = await getOnus(page);
+
+    //Get Zones
+    const zones = await getZones(page);
+
+    //Get Speed
+    const speed = await getSpeedProfiles(page);
 
 
     await browser.close();
@@ -143,23 +177,32 @@ const getData = async () => {
     }
 }
 
-const autorize = async (href, client_zone, speed_download, speed_upload, client_name) => {
-    const browser = await chromium.launch({
-        headless: false,
-        args: ['--start-maximized', '--disable-infobars', '--disable-web-security', '--disable-site-isolation-trials'],
-        slowMo: 100
-    });
-    const context = await browser.newContext();
-
-    const page = await context.newPage();
-    await page.goto(URL_NAVIGATE);
+const getUnconfiguredOnus = async function () {
+    const {
+        browser,
+        context,
+        page
+    } = await getBrowser();
 
     //login
-    await page.fill("input[name='identity']", ACCOUNT_USER);
-    await page.fill("input[id='password']", ACCOUNT_PASS);
-    await page.click("input[type='submit']");
-    // await page.waitForNavigation();
-    await page.goto(URL_NAVIGATE);
+    await process_login(page);
+
+    // get onus
+    const onus = await getOnus(page);
+
+    await browser.close();
+    return onus;
+}
+
+const autorize = async (href, client_zone, speed_download, speed_upload, client_name) => {
+    const {
+        browser,
+        context,
+        page
+    } = await getBrowser();
+
+    //login
+    await process_login(page);
 
     //Select ONU
     await page.click(`a[href="${href}"]`);
@@ -219,14 +262,15 @@ const autorize = async (href, client_zone, speed_download, speed_upload, client_
     // await page.waitForNavigation();
 
     await browser.close();
-    return signal;
-}
-
-getVlan = function (board, port) {
-    return `1${ board }${ port < 10 ? "0"+port : port }`;
+    return {
+        signal,
+        data_vlan
+    };
 }
 
 module.exports = {
-    getData,
+    getVlan,
+    getAllData,
+    getUnconfiguredOnus,
     autorize
 }
