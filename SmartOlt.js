@@ -11,7 +11,7 @@ const ACCOUNT_PASS = "2fXXBzQ9djJG";
 const getBrowser = async function () {
     const browser = await chromium.launch({
         headless: false,
-        args: ['--start-maximized', '--disable-infobars', '--disable-web-security', '--disable-site-isolation-trials'],
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
         slowMo: 100
     });
     const context = await browser.newContext();
