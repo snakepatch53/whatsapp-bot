@@ -159,7 +159,8 @@ const getAllData = async function () {
     await process_login(page);
 
     // get onus
-    const onus = await getOnus(page);
+    // const onus = await getOnus(page);
+    const onus = [];
 
     //Get Zones
     const zones = await getZones(page);

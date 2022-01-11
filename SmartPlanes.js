@@ -63,7 +63,7 @@ const getPlanes = async function (page) {
     const planes = await page.evaluate(async () => {
         let eventChange = new Event("change");
         let $selectRouter = await document.querySelector("select[name='servicio[nodo]']");
-        $selectRouter.selectedIndex = 2;
+        $selectRouter.selectedIndex = 1;
         $selectRouter.dispatchEvent(eventChange);
 
         let data = [];

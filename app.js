@@ -31,7 +31,10 @@ client.on('qr', (qr) => qrcode.generate(qr, 'small'));
 client.on('ready', async () => {
     console.log("Ready Whatsapp!");
     await DriveEntries.loadData();
-    client.on('message', (message) => DriveEntries.drive(message, client));
+    client.on('message', (message) => {
+        console.log(message.body + " ==> " + message.from);
+        DriveEntries.drive(message, client)
+    });
 });
 
 client.initialize();
