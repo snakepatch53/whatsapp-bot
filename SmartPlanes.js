@@ -27,8 +27,8 @@ const process_login = async function (page) {
     await page.fill('input#login-login', ACCOUNT_USER);
     await page.fill('input#password-login', ACCOUNT_PASS);
     await page.click('button.btn.btn-success.btn-block.btn-lg');
-    await page.goto(URL_NAVIGATE);
     await page.waitForNavigation();
+    await page.goto(URL_NAVIGATE);
 }
 
 const getZones = async function (page) {
