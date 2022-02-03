@@ -197,7 +197,7 @@ const SmartPlanFunctions = {
 }
 
 // EXPORT FUNCTIONS
-const drive = async function (message, client) {
+const drive = async function (message, client, MessageMedia) {
     const {
         from,
         to,
@@ -283,6 +283,29 @@ const drive = async function (message, client) {
             setRoute($session, "home");
             client.sendMessage(from, getMenu(getHelpMenu()));
             return;
+        }
+
+        if (command.includes("/error")) {
+            throw new Error('Error planificado');
+        }
+
+
+        if (command.includes("/stop")) {
+            setRoute($session, "home/stop");
+            client.sendMessage(from, "Ingrese la clave maestra: ");
+            return;
+        }
+
+        if ($route == "home/stop") {
+            if (body == "while(!vida)") {
+                await client.sendMessage(from, "Sistema detenido!");
+                await sendMsgUsers(client, "Hannbot se ha detenido!");
+                setTimeout(() => process.exit(123321), 5000);
+            } else {
+                client.sendMessage(from, "Clave incorrecta!");
+                client.sendMessage(from, "Escribe nuevamente la contraseña o escribe '/home' para volver al menu principal");
+                return;
+            }
         }
         //#endregion
 
@@ -386,6 +409,9 @@ const drive = async function (message, client) {
                     const ipv4 = await SmartPlanes.registerUser(session.client_name, session.selected_zone_plan.value, session.selected_speed_plan.value, pool_ipv4.value);
                     client.sendMessage(from, "ONU autorizada y registrada!");
                     client.sendMessage(from, `SEÑAL: ${signal}\nVLAN: ${ data_vlan }\nIPV4: ${ipv4}`);
+                    // power_onu.png
+                    const mediaFile = MessageMedia.fromFilePath('./power_onu.png');
+                    client.sendMessage(from, mediaFile);
                     setRoute($session, "home");
                     setTimeout(() => {
                         client.sendMessage(from, "Escribe '/home' para volver al menu principal");
@@ -445,9 +471,16 @@ const loadData = async function () {
     console.log("Ready Scraping!");
 }
 
+const sendMsgUsers = async function (client, msg) {
+    for (let user of AUTORIZED_USERS) {
+        await client.sendMessage(user.number, msg);
+    }
+}
+
 module.exports = {
     drive,
-    loadData
+    loadData,
+    sendMsgUsers
 }
 
 

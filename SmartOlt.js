@@ -251,14 +251,19 @@ const autorize = async (href, client_zone, speed_download, speed_upload, client_
         let promise = new Promise((resolve, reject) => {
             const loop = setInterval(async () => {
                 $signal = await document.querySelector("#signal_wrapper");
-                if (typeof ($signal) != "undefined" && $signal.innerText.trim() != "") {
-                    clearInterval(loop);
-                    resolve($signal.innerText);
+                if (typeof ($signal) != "undefined" && $signal.innerText.trim().includes("/")) {
+                    $signal = $signal.innerText.trim().split("/");
+                    if (parseFloat($signal[0]) && parseFloat($signal[1])) {
+                        clearInterval(loop);
+                        resolve($signal.innerText);
+                    }
                 }
             }, 100);
         });
         return await promise;
     });
+
+    await page.screenshot({ path: 'power_onu.png' });
 
     // await page.waitForNavigation();
 
